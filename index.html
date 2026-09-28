@@ -145,17 +145,22 @@
     }
     function updateFromHand(type,angle){
       let hours=current.hours,minutes=current.minutes;
-      if(type==='minute')minutes=Math.round(angle/6)%60;
+      if(type==='minute'){
+        const delta=(angle-dragging.lastAngle+540)%360-180;
+        dragging.totalMinutes+=delta/6;dragging.lastAngle=angle;
+        const total=((Math.round(dragging.totalMinutes)%1440)+1440)%1440;
+        hours=Math.floor(total/60);minutes=total%60;
+      }
       else{const minutesInHalfDay=Math.round(angle*2)%720,halfDay=current.hours>=12?12:0;hours=halfDay+Math.floor(minutesInHalfDay/60);minutes=minutesInHalfDay%60}
       const parsed={hours,minutes,label:`${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}`};
       applyTime(parsed,false);input.value=parsed.label;error.classList.add('ok');error.textContent='ปรับเวลาจากเข็มแล้ว';
     }
-    function beginDrag(type,event){dragging={type,id:event.pointerId};clock.classList.add('dragging');clock.setPointerCapture(event.pointerId);updateFromHand(type,pointerAngle(event));event.preventDefault()}
+    function beginDrag(type,event){if(dragging||event.button!==0)return;dragging={type,id:event.pointerId,lastAngle:pointerAngle(event),totalMinutes:current.hours*60+current.minutes};clock.classList.add('dragging');clock.setPointerCapture(event.pointerId);updateFromHand(type,pointerAngle(event));event.preventDefault()}
     hourHand.addEventListener('pointerdown',event=>beginDrag('hour',event));
     minuteHand.addEventListener('pointerdown',event=>beginDrag('minute',event));
     clock.addEventListener('pointermove',event=>{if(dragging&&event.pointerId===dragging.id)updateFromHand(dragging.type,pointerAngle(event))});
     const endDrag=event=>{if(dragging&&event.pointerId===dragging.id){dragging=null;clock.classList.remove('dragging')}};
-    clock.addEventListener('pointerup',endDrag);clock.addEventListener('pointercancel',endDrag);
+    clock.addEventListener('pointerup',endDrag);clock.addEventListener('pointercancel',endDrag);clock.addEventListener('lostpointercapture',endDrag);
     exportButton.addEventListener('click',async()=>{
       if(!showTime(input.value))return;
       exportButton.disabled=true;
