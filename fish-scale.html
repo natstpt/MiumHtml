@@ -42,7 +42,15 @@
     #dial{touch-action:none;overflow:visible}
     #needle{cursor:grab}#dial.dragging #needle{cursor:grabbing}
   </style>
-</head>
+<style>
+.value-toggle,.unit-toggle{flex-shrink:0;min-height:44px;border:0;border-radius:10px;padding:8px 12px;background:#e8edef;color:#26343a;font:700 14px Tahoma,system-ui,sans-serif;cursor:pointer}
+.input-row{position:relative}.value-toggle{margin-right:6px}.unit-toggle{margin-right:6px}
+body.values-hidden .input-row input,body.values-hidden .reading strong{visibility:hidden}
+body.values-hidden .input-row::before{content:"ซ่อนค่าอยู่";position:absolute;left:16px;color:#65747a;font-size:16px;pointer-events:none}
+body.values-hidden .reading::after{content:"ซ่อนค่าอยู่";display:block;font-size:20px}
+body.values-hidden .reading strong{display:none}
+body.values-hidden #error{visibility:hidden}
+</style></head>
 <body>
 <nav class="site-nav" aria-label="เลือกเครื่องมือ"><span class="site-brand">นาฬิกาและตาชั่ง</span><div class="site-links"><a href="index.html">นาฬิกา</a><a href="fish-scale.html" aria-current="page">ตาชั่ง</a></div></nav>
   <main>
@@ -72,7 +80,7 @@
         <circle cx="300" cy="300" r="294" fill="url(#rim)" stroke="#263038" stroke-width="7"/>
         <circle cx="300" cy="300" r="270" fill="url(#face)" stroke="#343d43" stroke-width="4"/>
         <g id="ticks"></g><g id="labels"></g>
-        <text x="300" y="154" text-anchor="middle" font-size="52" font-weight="900" fill="#1c252a">5 kg</text>
+        <text id="capacity" x="300" y="154" text-anchor="middle" font-size="52" font-weight="900" fill="#1c252a">5 kg</text>
         <g id="needle" transform="rotate(0 300 300)" filter="url(#needleShadow)">
           <path d="M300 320L300 75" stroke="transparent" stroke-width="55" pointer-events="stroke"/>
           <path d="M287 320 L294 84 Q300 60 306 84 L313 320 Z" fill="#df2f20" stroke="#852017" stroke-width="4"/>
@@ -89,7 +97,7 @@
       <label for="weight">น้ำหนัก</label>
       <div class="input-row">
         <input id="weight" type="number" min="0" max="5" step="0.1" value="2.5" inputmode="decimal" aria-describedby="error">
-        <span class="unit">กก.</span>
+        <button class="unit-toggle" id="toggleUnit" type="button" aria-label="เปลี่ยนหน่วยเป็นกรัม">kg ⇄</button><button class="value-toggle" id="toggleValue" type="button" aria-pressed="false" aria-label="ซ่อนหรือแสดงตัวเลขน้ำหนัก">ซ่อนตัวเลข</button>
       </div>
       <div id="error" class="error" role="status"></div>
       <input id="slider" type="range" min="0" max="5" step="0.1" value="2.5" aria-label="เลื่อนเพื่อกำหนดน้ำหนัก">
@@ -111,6 +119,17 @@
       if(major&&i>0){const [x,y]=point(176,angle), text=document.createElementNS(NS,'text');text.setAttribute('x',x);text.setAttribute('y',y+17);text.setAttribute('text-anchor','middle');text.setAttribute('font-size','58');text.setAttribute('font-weight','900');text.setAttribute('fill','#1b252a');text.textContent=i/10;labels.append(text)}
     }
     const input=document.querySelector('#weight'), slider=document.querySelector('#slider'), needle=document.querySelector('#needle'), reading=document.querySelector('#reading'), error=document.querySelector('#error'), exportButton=document.querySelector('#export'), exportStatus=document.querySelector('#exportStatus');
+    const visibilityButton=document.querySelector('#toggleValue');
+    visibilityButton.addEventListener('click',()=>{
+      const hidden=document.body.classList.toggle('values-hidden');
+      visibilityButton.setAttribute('aria-pressed',String(hidden));
+      visibilityButton.textContent=hidden?'แสดงตัวเลข':'ซ่อนตัวเลข';
+      input.tabIndex=hidden?-1:0;
+      input.setAttribute('aria-hidden',String(hidden));
+      reading.setAttribute('aria-hidden',String(hidden));
+    });
+    let weightUnit='kg';
+    const unitButton=document.querySelector('#toggleUnit');
     function display(value,source){
       let number=Number(value);
       if(!Number.isFinite(number)){error.textContent='กรุณาใส่ตัวเลขตั้งแต่ 0 ถึง 5';return}
@@ -120,11 +139,23 @@
       needle.setAttribute('transform',`rotate(${angle} 300 300)`);
       needle.style.transform=`rotate(${angle}deg)`;
       needle.style.transformOrigin='300px 300px';needle.style.transition=source==='drag'?'none':'transform .45s cubic-bezier(.2,.8,.2,1)';
-      reading.textContent=`${clamped.toFixed(1)} กก.`;slider.value=clamped;slider.style.setProperty('--progress',`${clamped/5*100}%`);
-      if(source==='slider'||source==='drag')input.value=clamped.toFixed(1);
+      reading.textContent=weightUnit==='g'?`${Math.round(clamped*1000)} g`:`${clamped.toFixed(1)} kg`;slider.value=clamped;slider.style.setProperty('--progress',`${clamped/5*100}%`);
+      if(source==='slider'||source==='drag')input.value=weightUnit==='g'?String(Math.round(clamped*1000)):clamped.toFixed(1);
     }
-    input.addEventListener('input',e=>display(e.target.value,'input'));
-    input.addEventListener('blur',()=>{if(input.value==='')return;input.value=Math.max(0,Math.min(5,Number(input.value))).toFixed(1)});
+    input.addEventListener('input',e=>display(Number(e.target.value)/(weightUnit==='g'?1000:1),'input'));
+    input.addEventListener('blur',()=>{if(input.value==='')return;display(Number(input.value)/(weightUnit==='g'?1000:1),'slider')});
+    unitButton.addEventListener('click',()=>{
+      weightUnit=weightUnit==='kg'?'g':'kg';
+      const grams=weightUnit==='g';
+      unitButton.textContent=weightUnit+' ⇄';
+      unitButton.setAttribute('aria-label',grams?'เปลี่ยนหน่วยเป็นกิโลกรัม':'เปลี่ยนหน่วยเป็นกรัม');
+      input.max=grams?'5000':'5';input.step=grams?'100':'0.1';
+      document.querySelector('#capacity').textContent=grams?'5000 g':'5 kg';
+      [...labels.children].forEach((label,i)=>label.textContent=grams?(i+1)*1000:i+1);
+      const ends=document.querySelectorAll('.range-labels span');
+      ends[0].textContent='0 '+weightUnit;ends[1].textContent=(grams?'5000':'5')+' '+weightUnit;
+      display(slider.value,'slider');
+    });
     slider.addEventListener('input',e=>display(e.target.value,'slider'));
     document.querySelector('#random').addEventListener('click',()=>{
       const tick=(Math.round(Number(slider.value)*10)+1+Math.floor(Math.random()*50))%51;
