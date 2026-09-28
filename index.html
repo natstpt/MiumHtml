@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>นาฬิกากำหนดเวลา</title>
+  <meta name="description" content="นาฬิกาแบบโต้ตอบ กรอกเวลาแล้วเข็มเปลี่ยนตามทันที">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='28' fill='white' stroke='%231a242b' stroke-width='5'/%3E%3Cpath d='M32 13v20l14 8' fill='none' stroke='%23e33221' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
+  <style>
+    :root{font-family:"Noto Sans Thai","Tahoma",system-ui,sans-serif;color:#172129;background:#eef4f6}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;background:radial-gradient(circle at 42% 8%,#fff 0 24%,#e7f1f3 72%,#d6e5e8 100%)}
+    main{width:min(1120px,100%);min-height:100vh;margin:auto;padding:28px;display:grid;grid-template-columns:minmax(420px,680px) minmax(285px,350px);gap:42px;align-items:center}
+    .clock-wrap{position:relative;width:min(100%,650px);margin:auto}
+    .clock-wrap::after{content:"";position:absolute;z-index:1;left:0;right:0;bottom:0;height:7%;background:#fff;pointer-events:none}
+    .clock-image{position:relative;z-index:0;display:block;width:100%;height:auto;user-select:none;-webkit-user-drag:none}
+    .clock-face{position:absolute;z-index:2;left:7.75%;top:5.25%;width:89.5%;aspect-ratio:1;touch-action:none}
+    #hourHand,#minuteHand{cursor:grab}
+    .clock-face.dragging #hourHand,.clock-face.dragging #minuteHand{cursor:grabbing}
+    .panel{background:#fff;border:1px solid #d9e3e5;border-radius:24px;padding:28px;box-shadow:0 20px 55px #39535b1c}
+    h1{margin:0 0 8px;font-size:clamp(1.6rem,3vw,2.15rem);line-height:1.25}
+    .hint{margin:0 0 22px;color:#596a70;line-height:1.6}
+    label{display:block;font-weight:800;margin-bottom:9px}
+    .input-row{display:flex;align-items:center;border:2px solid #bac8cc;border-radius:15px;overflow:hidden;background:#fff;transition:.2s}
+    .input-row:focus-within{border-color:#e33221;box-shadow:0 0 0 4px #e3322118}
+    input{width:100%;border:0;outline:0;padding:14px 8px 14px 16px;font:800 1.3rem/1 system-ui;background:transparent;color:#172129}
+    .unit{padding:0 16px;color:#58676c;font-weight:800}
+    .error{min-height:24px;margin:8px 0 2px;color:#bd2418;font-size:.88rem;line-height:1.45}
+    .error.ok{color:#28724c}
+    .examples{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 20px}
+    .examples button{border:1px solid #cbd6d9;background:#f4f7f8;color:#27353b;border-radius:99px;padding:7px 12px;font-family:inherit;font-size:.9rem;font-weight:700;line-height:1.2;cursor:pointer}
+    .examples button:hover{border-color:#e33221;color:#c7281b;background:#fff6f5}
+    .reading{padding:18px;border-radius:17px;background:#17242a;color:#fff;text-align:center}
+    .reading span{display:block;font-size:.85rem;color:#b9c8cd;margin-bottom:3px}
+    .reading strong{font-size:2rem;font-variant-numeric:tabular-nums}
+    .actions{display:grid;grid-template-columns:1fr 2fr;gap:10px;margin-top:14px}
+    .reset-btn,.export-btn{border:0;border-radius:15px;padding:14px 12px;font-family:inherit;font-size:.95rem;font-weight:800;cursor:pointer}
+    .reset-btn{background:#e8edef;color:#26343a;border:1px solid #ccd6d9}
+    .reset-btn:hover{background:#dce4e7}
+    .export-btn{background:#e33221;color:#fff;box-shadow:0 8px 20px #e3322130}
+    .export-btn:disabled{opacity:.65;cursor:wait}
+    .export-note{margin:9px 0 0;text-align:center;color:#65747a;font-size:.82rem;line-height:1.45}
+    @media(max-width:820px){main{grid-template-columns:1fr;padding:16px;gap:16px}.clock-wrap{max-width:620px}.panel{padding:22px}}
+  </style>
+  <link rel="stylesheet" href="navigation.css">
+</head>
+<body>
+<nav class="site-nav" aria-label="เลือกเครื่องมือ"><span class="site-brand">นาฬิกาและตาชั่ง</span><div class="site-links"><a href="index.html" aria-current="page">นาฬิกา</a><a href="fish-scale.html">ตาชั่ง</a></div></nav>
+  <main>
+    <div class="clock-wrap" aria-label="นาฬิกาเข็ม">
+      <svg class="clock-face" id="clock" viewBox="0 0 600 600" role="img" aria-label="หน้าปัดนาฬิกาที่เข็มปรับตามเวลาที่กรอก">
+        <defs>
+          <radialGradient id="face" cx="45%" cy="38%"><stop offset="0" stop-color="#fff"/><stop offset=".82" stop-color="#fff"/><stop offset="1" stop-color="#f1f3f4"/></radialGradient>
+          <filter id="handShadow"><feDropShadow dx="2" dy="3" stdDeviation="2" flood-opacity=".28"/></filter>
+        </defs>
+        <circle cx="300" cy="300" r="292" fill="#252a30"/>
+        <circle cx="300" cy="300" r="277" fill="url(#face)" stroke="#aeb5ba" stroke-width="4"/>
+        <g id="ticks"></g><g id="numbers"></g>
+        <g id="dayNight" aria-label="สัญลักษณ์กลางวันหรือกลางคืน">
+          <circle id="dayNightBadge" cx="552" cy="48" r="32" fill="#fff" stroke="#454b50" stroke-width="3"/>
+          <text id="dayNightIcon" x="552" y="66" text-anchor="middle" font-family="Segoe UI Symbol,Arial Unicode MS,sans-serif" font-size="49" font-weight="400" fill="#252a2e">☼</text>
+        </g>
+        <g id="hourHand" transform="rotate(0 300 300)" filter="url(#handShadow)">
+          <path d="M300 320 L300 154" fill="none" stroke="transparent" stroke-width="46" pointer-events="stroke"/>
+          <path d="M286 320 L292 171 Q300 151 308 171 L314 320 Z" fill="#111519"/>
+        </g>
+        <g id="minuteHand" transform="rotate(0 300 300)" filter="url(#handShadow)">
+          <path d="M300 320 L300 79" fill="none" stroke="transparent" stroke-width="40" pointer-events="stroke"/>
+          <path d="M290 320 L295 99 Q300 77 305 99 L310 320 Z" fill="#111519"/>
+        </g>
+        <circle cx="300" cy="300" r="25" fill="#fff" stroke="#111519" stroke-width="11"/>
+        <circle cx="300" cy="300" r="7" fill="#e33221"/>
+      </svg>
+    </div>
+
+    <section class="panel">
+      <h1>กำหนดเวลาบนนาฬิกา</h1>
+      <p class="hint">กรอกเวลาในรูปแบบ hh:mm เข็มจะเปลี่ยนตามเวลาทันที</p>
+      <label for="timeInput">เวลา</label>
+      <div class="input-row">
+        <input id="timeInput" type="text" value="17:30" placeholder="เช่น 17:30" inputmode="decimal" autocomplete="off" aria-describedby="error">
+        <span class="unit">น.</span>
+      </div>
+      <div id="error" class="error" role="status"></div>
+      <div class="examples" aria-label="เวลาตัวอย่าง">
+        <button type="button" data-time="16:30">16:30 น.</button>
+        <button type="button" data-time="17:30">17:30 น.</button>
+        <button type="button" data-time="17:40">17:40 น.</button>
+      </div>
+      <div class="reading"><span>เวลาที่แสดง</span><strong id="reading">17:30 น.</strong></div>
+      <div class="actions">
+        <button class="reset-btn" id="reset" type="button">Reset 00:00</button>
+        <button class="export-btn" id="export" type="button">ส่งออกเป็น PNG</button>
+      </div>
+      <p class="export-note" id="exportStatus">ไฟล์จะใช้ตำแหน่งเข็มตามเวลาล่าสุด</p>
+    </section>
+  </main>
+
+  <script>
+    const NS='http://www.w3.org/2000/svg',ticks=document.querySelector('#ticks'),numbers=document.querySelector('#numbers');
+    const point=(radius,angle)=>{const a=(angle-90)*Math.PI/180;return[300+radius*Math.cos(a),300+radius*Math.sin(a)]};
+    for(let i=0;i<60;i++){
+      const angle=i*6,major=i%5===0,[x1,y1]=point(major?241:250,angle),[x2,y2]=point(264,angle),line=document.createElementNS(NS,'line');
+      Object.entries({x1,y1,x2,y2,stroke:major?'#171c20':'#697178','stroke-width':major?7:2.5,'stroke-linecap':'round'}).forEach(([k,v])=>line.setAttribute(k,v));ticks.append(line);
+    }
+    for(let n=1;n<=12;n++){
+      const [x,y]=point(201,n*30),text=document.createElementNS(NS,'text');
+      Object.entries({x,y:y+20,'text-anchor':'middle','font-size':64,'font-weight':800,fill:'#101418'}).forEach(([k,v])=>text.setAttribute(k,v));text.textContent=n;numbers.append(text);
+    }
+    const clock=document.querySelector('#clock'),input=document.querySelector('#timeInput'),reading=document.querySelector('#reading'),error=document.querySelector('#error'),hourHand=document.querySelector('#hourHand'),minuteHand=document.querySelector('#minuteHand'),dayNight=document.querySelector('#dayNight'),dayNightBadge=document.querySelector('#dayNightBadge'),dayNightIcon=document.querySelector('#dayNightIcon'),resetButton=document.querySelector('#reset'),exportButton=document.querySelector('#export'),exportStatus=document.querySelector('#exportStatus');
+    let current={hours:17,minutes:30,label:'17:30'};
+    function parseTime(value){
+      const cleaned=String(value).trim().replace(/\s*น\.?\s*$/i,'').replace(/\s+/g,'');
+      const match=cleaned.match(/^(\d{1,2})(?:[.:](\d{1,3}))?$/);if(!match)return null;
+      const total=Number(match[1])*60+Number(match[2]||0);if(!Number.isFinite(total))return null;
+      const day=((total%1440)+1440)%1440,hours=Math.floor(day/60),minutes=day%60;
+      return{hours,minutes,label:`${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}`};
+    }
+    function applyTime(parsed,animate=true){
+      current=parsed;const hourAngle=(parsed.hours%12)*30+parsed.minutes*.5,minuteAngle=parsed.minutes*6;
+      hourHand.setAttribute('transform',`rotate(${hourAngle} 300 300)`);minuteHand.setAttribute('transform',`rotate(${minuteAngle} 300 300)`);
+      [hourHand,minuteHand].forEach(hand=>{hand.style.transformOrigin='300px 300px';hand.style.transition=animate?'transform .5s cubic-bezier(.2,.8,.2,1)':'none'});
+      hourHand.style.transform=`rotate(${hourAngle}deg)`;minuteHand.style.transform=`rotate(${minuteAngle}deg)`;
+      const isDay=parsed.hours>=6&&parsed.hours<18;
+      dayNightIcon.textContent=isDay?'☼':'☾';dayNightIcon.setAttribute('fill',isDay?'#202428':'#555b60');
+      dayNightBadge.setAttribute('fill',isDay?'#fff':'#e4e7e9');dayNightBadge.setAttribute('stroke','#454b50');
+      dayNight.setAttribute('aria-label',isDay?'กลางวัน แสดงพระอาทิตย์':'กลางคืน แสดงพระจันทร์');
+      reading.textContent=`${parsed.label} น.`;
+    }
+    function showTime(value){
+      const parsed=parseTime(value);error.classList.remove('ok');if(!parsed){error.textContent='กรุณากรอกเวลาในรูปแบบ hh:mm เช่น 17:30';return false}
+      applyTime(parsed);
+      const rawMinutes=Number(String(value).replace(/.*[.:]/,''));error.textContent=rawMinutes>=60?`ปรับเวลาเป็น ${parsed.label} น. โดยอัตโนมัติ`:'';return true;
+    }
+    input.addEventListener('input',e=>showTime(e.target.value));
+    input.addEventListener('blur',()=>{if(showTime(input.value))input.value=current.label});
+    document.querySelectorAll('[data-time]').forEach(button=>button.addEventListener('click',()=>{input.value=button.dataset.time;showTime(input.value)}));
+    resetButton.addEventListener('click',()=>{
+      const reset={hours:0,minutes:0,label:'00:00'};input.value='00:00';applyTime(reset);error.classList.add('ok');error.textContent='รีเซ็ตนาฬิกาเป็น 00:00 น. แล้ว';
+    });
+    let dragging=null;
+    function pointerAngle(event){
+      const rect=clock.getBoundingClientRect(),x=(event.clientX-rect.left)/rect.width*600,y=(event.clientY-rect.top)/rect.height*600;
+      return(Math.atan2(y-300,x-300)*180/Math.PI+90+360)%360;
+    }
+    function updateFromHand(type,angle){
+      let hours=current.hours,minutes=current.minutes;
+      if(type==='minute')minutes=Math.round(angle/6)%60;
+      else{const minutesInHalfDay=Math.round(angle*2)%720,halfDay=current.hours>=12?12:0;hours=halfDay+Math.floor(minutesInHalfDay/60);minutes=minutesInHalfDay%60}
+      const parsed={hours,minutes,label:`${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}`};
+      applyTime(parsed,false);input.value=parsed.label;error.classList.add('ok');error.textContent='ปรับเวลาจากเข็มแล้ว';
+    }
+    function beginDrag(type,event){dragging={type,id:event.pointerId};clock.classList.add('dragging');clock.setPointerCapture(event.pointerId);updateFromHand(type,pointerAngle(event));event.preventDefault()}
+    hourHand.addEventListener('pointerdown',event=>beginDrag('hour',event));
+    minuteHand.addEventListener('pointerdown',event=>beginDrag('minute',event));
+    clock.addEventListener('pointermove',event=>{if(dragging&&event.pointerId===dragging.id)updateFromHand(dragging.type,pointerAngle(event))});
+    const endDrag=event=>{if(dragging&&event.pointerId===dragging.id){dragging=null;clock.classList.remove('dragging')}};
+    clock.addEventListener('pointerup',endDrag);clock.addEventListener('pointercancel',endDrag);
+    exportButton.addEventListener('click',async()=>{
+      if(!showTime(input.value))return;
+      exportButton.disabled=true;
+      try{
+        const fileName=`clock-${current.label.replace(':','-')}.png`;let fileHandle=null;
+        if('showSaveFilePicker'in window){exportStatus.textContent='เลือกชื่อไฟล์และตำแหน่งจัดเก็บ…';fileHandle=await window.showSaveFilePicker({suggestedName:fileName,types:[{description:'ไฟล์ภาพ PNG',accept:{'image/png':['.png']}}]})}
+        exportStatus.textContent='กำลังสร้างไฟล์ PNG จากเวลาล่าสุด…';
+        const canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');canvas.width=1200;canvas.height=1200;ctx.clearRect(0,0,canvas.width,canvas.height);
+        const svg=document.querySelector('#clock').cloneNode(true);svg.setAttribute('xmlns',NS);svg.setAttribute('width','600');svg.setAttribute('height','600');
+        const svgUrl=URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(svg)],{type:'image/svg+xml'})),clockImage=new Image();await new Promise((resolve,reject)=>{clockImage.onload=resolve;clockImage.onerror=reject;clockImage.src=svgUrl});
+        const padding=40,size=canvas.width-padding*2;ctx.drawImage(clockImage,padding,padding,size,size);URL.revokeObjectURL(svgUrl);
+        const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
+        if(fileHandle){const writable=await fileHandle.createWritable();await writable.write(blob);await writable.close()}else{const link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download=fileName;link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000)}
+        exportStatus.textContent='บันทึก PNG จากเวลาล่าสุดเรียบร้อยแล้ว';
+      }catch(e){exportStatus.textContent=e&&e.name==='AbortError'?'ยกเลิกการบันทึกไฟล์แล้ว':'ไม่สามารถส่งออกได้ กรุณาลองอีกครั้ง'}finally{exportButton.disabled=false}
+    });
+    showTime(input.value);
+  </script>
+</body>
+</html>
