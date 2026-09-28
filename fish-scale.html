@@ -36,7 +36,7 @@
     .error{min-height:22px;color:#bd2418;font-size:.88rem;margin-top:9px}
     @media(max-width:820px){main{grid-template-columns:1fr;padding:14px;gap:10px}.scale-wrap{max-width:680px;margin:auto}.panel{padding:22px}.hint{margin-bottom:17px}}
   </style>
-  <link rel="stylesheet" href="navigation.css">
+  <link rel="stylesheet" href="navigation.css?v=3">
   <style>
     #scaleArtwork{width:100%;height:auto;display:block;user-select:none}
     #dial{touch-action:none;overflow:visible}
@@ -95,6 +95,7 @@
       <input id="slider" type="range" min="0" max="5" step="0.1" value="2.5" aria-label="เลื่อนเพื่อกำหนดน้ำหนัก">
       <div class="range-labels"><span>0 กก.</span><span>5 กก.</span></div>
       <div class="reading"><span>น้ำหนักที่แสดง</span><strong id="reading">2.5 กก.</strong></div>
+      <button class="random-btn" id="random" type="button">สุ่มน้ำหนัก (Random)</button>
       <button class="export-btn" id="export" type="button">ส่งออกเป็น PNG พื้นหลังโปร่งใส</button>
       <p class="export-note" id="exportStatus">ไฟล์จะใช้ตำแหน่งเข็มตามน้ำหนักล่าสุด</p>
     </section>
@@ -125,6 +126,10 @@
     input.addEventListener('input',e=>display(e.target.value,'input'));
     input.addEventListener('blur',()=>{if(input.value==='')return;input.value=Math.max(0,Math.min(5,Number(input.value))).toFixed(1)});
     slider.addEventListener('input',e=>display(e.target.value,'slider'));
+    document.querySelector('#random').addEventListener('click',()=>{
+      const tick=(Math.round(Number(slider.value)*10)+1+Math.floor(Math.random()*50))%51;
+      display(tick/10,'slider');
+    });
     const dial=document.querySelector('#dial');let drag=null;
     function scaleAngle(event){
       const p=dial.createSVGPoint();p.x=event.clientX;p.y=event.clientY;
