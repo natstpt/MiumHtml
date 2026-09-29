@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>ไม้บรรทัดเมตรและเซนติเมตร</title>
   <meta name="description" content="สื่อการเรียนรู้เรื่องเมตรและเซนติเมตรสำหรับเด็กประถม">
-  <link rel="stylesheet" href="navigation.css?v=6">
+  <link rel="stylesheet" href="navigation.css?v=7">
   <style>
     :root{font-family:"Noto Sans Thai","Tahoma",system-ui,sans-serif;color:#16212a;background:#eef4f6}
     *{box-sizing:border-box}
@@ -15,12 +15,15 @@
     main{width:min(1180px,100%);min-height:calc(100svh - 320px);margin:auto;padding:clamp(16px,3vw,30px);display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:24px;align-items:center}
     .ruler-card,.panel{background:#fff;border:1px solid #d9e3e5;border-radius:24px;box-shadow:0 20px 55px #39535b1c}
     .ruler-card{padding:clamp(12px,2.4vw,28px);overflow:hidden}
-    .ruler-top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:0 2px 8px}
+    .ruler-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin:0 2px 8px}
     .ruler-top h1{font-size:clamp(1.25rem,2.6vw,1.8rem);line-height:1.3;margin:0}
     .range-badge{flex:none;border-radius:999px;padding:7px 12px;background:#fff3d1;color:#725314;font-size:.88rem;font-weight:800}
+    .zoom-controls{display:flex;align-items:center;gap:6px;border:1px solid #e0e6e7;border-radius:12px;padding:3px;background:#f7f9f9}
+    .zoom-controls button{width:38px;height:36px;border:0;border-radius:9px;background:#e8edef;color:#26343a;font-size:20px;font-weight:800;line-height:1}
+    .zoom-controls button:disabled{opacity:.45;cursor:default}
+    .zoom-value{min-width:42px;text-align:center;font-weight:800;color:#26343a}
     .ruler-scroll{width:100%;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-color:#d1ae59 #fff3d1;scrollbar-width:thin}
-    #ruler{display:block;width:100%;height:auto;overflow:visible;touch-action:pan-y;user-select:none}
-    #measureLine{pointer-events:stroke;cursor:ew-resize}
+    #ruler{display:block;width:100%;height:auto;overflow:visible;touch-action:pan-y;user-select:none;transition:width .18s ease}
     #measureHandle{cursor:grab;touch-action:none}
     #measureHandle:active{cursor:grabbing}
     .readings{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
@@ -31,7 +34,7 @@
     .panel h2{font-size:1.5rem;line-height:1.35;margin:0 0 8px}
     .hint{margin:0 0 20px;color:#5c6c72;line-height:1.65}
     label{display:block;font-weight:800;margin-bottom:8px}
-    input[type=range]{appearance:none;width:100%;padding:0;margin:18px 0 10px;height:8px;border-radius:99px;background:linear-gradient(90deg,#e69b24 var(--progress,7%),#dde5e7 var(--progress,7%));cursor:pointer}
+    input[type=range]{appearance:none;width:100%;padding:0;margin:18px 0 10px;height:8px;border-radius:99px;background:linear-gradient(90deg,#e69b24 var(--progress,17.5%),#dde5e7 var(--progress,17.5%));cursor:pointer}
     input[type=range]::-webkit-slider-thumb{appearance:none;width:26px;height:26px;border-radius:50%;background:#fff;border:7px solid #e69b24;box-shadow:0 2px 7px #1c273044}
     input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:#fff;border:7px solid #e69b24;box-shadow:0 2px 7px #1c273044}
     .range-labels{display:flex;justify-content:space-between;color:#65747a;font-size:.85rem;gap:8px}
@@ -45,7 +48,7 @@
     .note{margin:16px 0 0;color:#65747a;font-size:.88rem;line-height:1.6}
     button:focus-visible,input:focus-visible,#measureHandle:focus-visible{outline:3px solid #197caa;outline-offset:3px}
     @media(max-width:820px){main{grid-template-columns:1fr;gap:14px;min-height:0}.panel{padding:20px}.ruler-card{padding:16px}.hint{margin-bottom:12px}}
-    @media(max-width:600px){.site-banner{margin-top:8px}.ruler-top{align-items:flex-start;flex-direction:column;gap:7px}.ruler-top h1{font-size:1.35rem}.range-badge{font-size:.8rem}.ruler-scroll #ruler{width:780px;max-width:none}.ruler-scroll::after{content:"เลื่อนสเกลไปทางซ้ายหรือขวาเพื่อดูแต่ละช่วง";display:block;padding:6px 2px 0;color:#65747a;font-size:.8rem}.reading{padding:12px 8px}.presets{gap:6px}.presets button{font-size:13px}}
+    @media(max-width:600px){.site-banner{margin-top:8px}.ruler-top{align-items:flex-start}.ruler-top h1{font-size:1.3rem}.range-badge{font-size:.8rem}.ruler-scroll #ruler{width:700px;max-width:none}.ruler-scroll::after{content:"เลื่อนสเกลไปทางซ้ายหรือขวาเพื่อดู";display:block;padding:6px 2px 0;color:#65747a;font-size:.8rem}.reading{padding:12px 8px}.presets{gap:6px}.presets button{font-size:13px}}
     @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
   </style>
 </head>
@@ -54,21 +57,36 @@
   <div class="site-banner"><img src="assets/classroom-banner.webp" alt="คุณครูกำลังสอนนักเรียนในห้องเรียน" decoding="async"></div>
   <main>
     <section class="ruler-card" aria-label="ไม้บรรทัดเมตรและเซนติเมตร">
-      <div class="ruler-top"><h1>ไม้บรรทัดวัดความยาว</h1><span class="range-badge">500 cm = 5 m</span></div>
-      <div class="ruler-scroll">
-        <svg id="ruler" viewBox="0 0 1160 510" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="rulerTitle rulerDescription">
-          <title id="rulerTitle">ไม้บรรทัดห้าเมตร แสดงขีดเซนติเมตร</title>
-          <desc id="rulerDescription">ไม้บรรทัดแบ่งเป็นห้าช่วง ช่วงละหนึ่งเมตร ทุกขีดแทนหนึ่งเซนติเมตร ลากจุดสีส้มเพื่อกำหนดความยาว</desc>
+      <div class="ruler-top">
+        <h1>ไม้บรรทัดวัดความยาว</h1>
+        <span class="range-badge">200 cm = 2 m</span>
+        <div class="zoom-controls" aria-label="ปรับขนาดสเกล">
+          <button id="zoomOut" type="button" aria-label="ย่อสเกล" title="ย่อสเกล">−</button>
+          <span id="zoomValue" class="zoom-value" aria-live="polite">1×</span>
+          <button id="zoomIn" type="button" aria-label="ขยายสเกล" title="ขยายสเกล">+</button>
+        </div>
+      </div>
+      <div class="ruler-scroll" id="rulerScroll">
+        <svg id="ruler" viewBox="0 0 1160 290" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="rulerTitle rulerDescription">
+          <title id="rulerTitle">ไม้บรรทัดสองเมตร แสดงขีดเซนติเมตร</title>
+          <desc id="rulerDescription">ทุกขีดแทนหนึ่งเซนติเมตร ตัวเลขแสดงทุกยี่สิบเซนติเมตร มีจุดอ้างอิงที่ศูนย์ หนึ่ง และสองเมตร</desc>
           <defs>
             <linearGradient id="wood" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#fff0b0"/><stop offset=".52" stop-color="#f8dc83"/><stop offset="1" stop-color="#edc665"/></linearGradient>
-            <filter id="shadow" x="-10%" y="-20%" width="120%" height="150%"><feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#795d2d" flood-opacity=".14"/></filter>
+            <filter id="shadow" x="-10%" y="-20%" width="120%" height="150%"><feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#795d2d" flood-opacity=".16"/></filter>
           </defs>
-          <g id="rulerRows"></g>
+          <rect x="35" y="30" width="1090" height="190" rx="20" fill="url(#wood)" stroke="#bb944b" stroke-width="3" filter="url(#shadow)"/>
+          <path d="M55 45H1105" stroke="#fff7d8" stroke-width="2" opacity=".75"/>
+          <text x="57" y="73" fill="#705524" font-size="18" font-weight="800">cm</text>
           <g id="cmTicks" stroke="#57451e" stroke-linecap="round"></g>
           <g id="cmLabels" fill="#433719" font-family="system-ui,Tahoma,sans-serif" font-weight="800" text-anchor="middle"></g>
-          <line id="measureLine" x1="115" y1="110" x2="185" y2="110" stroke="#e34b3d" stroke-width="5" stroke-linecap="round"/>
-          <circle id="measureStart" cx="115" cy="110" r="6" fill="#e34b3d"/>
-          <g id="measureHandle" transform="translate(185 110)" role="slider" tabindex="0" aria-label="จุดวัดความยาว" aria-valuemin="0" aria-valuemax="500" aria-valuenow="35" aria-valuetext="35 เซนติเมตร">
+          <line x1="115" y1="208" x2="1090" y2="208" stroke="#9c7a34" stroke-width="3" stroke-linecap="round"/>
+          <path d="M115 202L105 208L115 214M1090 202L1100 208L1090 214" fill="none" stroke="#9c7a34" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          <g fill="#705524" font-size="18" font-weight="800" text-anchor="middle">
+            <text x="115" y="241">0 m</text><text x="602.5" y="241">1 m</text><text x="1090" y="241">2 m</text>
+          </g>
+          <line id="measureLine" x1="115" y1="266" x2="285.625" y2="266" stroke="#e34b3d" stroke-width="5" stroke-linecap="round"/>
+          <circle cx="115" cy="266" r="6" fill="#e34b3d"/>
+          <g id="measureHandle" transform="translate(285.625 266)" role="slider" tabindex="0" aria-label="จุดวัดความยาว" aria-valuemin="0" aria-valuemax="200" aria-valuenow="35" aria-valuetext="35 เซนติเมตร">
             <path d="M0-14V-5" stroke="#e34b3d" stroke-width="3"/>
             <circle r="12" fill="#fff" stroke="#e34b3d" stroke-width="5"/>
             <circle r="3" fill="#e34b3d"/>
@@ -82,70 +100,67 @@
     </section>
     <section class="panel" aria-label="กำหนดความยาว">
       <h2>ลองวัดความยาว</h2>
-      <p class="hint">ไม้บรรทัดแบ่งเป็นช่วงละ 1 เมตร ลากจุดสีส้มหรือเลื่อนแถบทีละ 1 เซนติเมตร</p>
+      <p class="hint">ลากจุดสีส้มหรือเลื่อนแถบทีละ 1 เซนติเมตร แล้วอ่านค่าเป็นเซนติเมตรและเมตร</p>
       <label for="lengthSlider">ความยาวที่ต้องการวัด</label>
-      <input id="lengthSlider" type="range" min="0" max="500" step="1" value="35" aria-label="กำหนดความยาวเป็นเซนติเมตร">
-      <div class="range-labels"><span>0 cm</span><span>500 cm = 5 m</span></div>
+      <input id="lengthSlider" type="range" min="0" max="200" step="1" value="35" aria-label="กำหนดความยาวเป็นเซนติเมตร">
+      <div class="range-labels"><span>0 cm</span><span>200 cm = 2 m</span></div>
       <div class="presets" aria-label="ความยาวตัวอย่าง">
+        <button type="button" data-cm="25">25 cm</button>
         <button type="button" data-cm="50">50 cm</button>
         <button type="button" data-cm="100">100 cm = 1 m</button>
         <button type="button" data-cm="150">1 m 50 cm</button>
-        <button type="button" data-cm="250">2 m 50 cm</button>
-        <button type="button" data-cm="400">4 m</button>
-        <button type="button" data-cm="500">5 m</button>
+        <button type="button" data-cm="200">2 m</button>
       </div>
       <button class="random-btn" id="randomButton" type="button">สุ่มความยาว (Random)</button>
       <button class="reset-btn" id="resetButton" type="button">เริ่มใหม่ที่ 0 cm</button>
-      <p class="note">แต่ละช่วงยาว 1 m ขีดแต่ละขีดแทน 1 cm จำไว้ว่า 100 cm เท่ากับ 1 m</p>
+      <p class="note">ขีดเล็กแต่ละขีดแทน 1 cm ตัวเลขบอกระยะทุก 10 cm จำไว้ว่า 100 cm เท่ากับ 1 m</p>
     </section>
   </main>
   <script>
     (function(){
-      const NS='http://www.w3.org/2000/svg';
-      const x0=115,xEnd=1090,span=xEnd-x0,maxCm=500,rowTop=30,rowPitch=94;
-      const rows=document.querySelector('#rulerRows'),ticks=document.querySelector('#cmTicks'),labels=document.querySelector('#cmLabels');
-      const ruler=document.querySelector('#ruler'),handle=document.querySelector('#measureHandle');
-      const line=document.querySelector('#measureLine'),startDot=document.querySelector('#measureStart');
-      const slider=document.querySelector('#lengthSlider'),cmValue=document.querySelector('#cmValue'),meterValue=document.querySelector('#meterValue');
-      const position=cm=>x0+span*(cm/100);
+      const NS='http://www.w3.org/2000/svg',x0=115,xEnd=1090,span=xEnd-x0,maxCm=200;
+      const ticks=document.querySelector('#cmTicks'),labels=document.querySelector('#cmLabels');
+      const ruler=document.querySelector('#ruler'),scroll=document.querySelector('#rulerScroll'),handle=document.querySelector('#measureHandle');
+      const line=document.querySelector('#measureLine'),slider=document.querySelector('#lengthSlider');
+      const cmValue=document.querySelector('#cmValue'),meterValue=document.querySelector('#meterValue');
+      const zoomOut=document.querySelector('#zoomOut'),zoomIn=document.querySelector('#zoomIn'),zoomValue=document.querySelector('#zoomValue');
+      const position=cm=>x0+span*(cm/maxCm);
       const addLine=(parent,attrs)=>{const el=document.createElementNS(NS,'line');Object.keys(attrs).forEach(k=>el.setAttribute(k,attrs[k]));parent.appendChild(el)};
-      const addText=(parent,x,y,value,size,anchor)=>{const el=document.createElementNS(NS,'text');el.setAttribute('x',x);el.setAttribute('y',y);el.setAttribute('font-size',size);if(anchor)el.setAttribute('text-anchor',anchor);el.textContent=value;parent.appendChild(el)};
-      for(let row=0;row<5;row++){
-        const y=rowTop+row*rowPitch,startCm=row*100,endCm=startCm+100;
-        const rect=document.createElementNS(NS,'rect');
-        Object.entries({x:35,y:y,width:1090,height:82,rx:15,fill:'url(#wood)',stroke:'#bb944b','stroke-width':2,filter:'url(#shadow)'}).forEach(([k,v])=>rect.setAttribute(k,v));
-        rows.appendChild(rect);
-        addText(rows,54,y+21,startCm+'–'+endCm+' cm',13,'start');
-        addText(rows,1104,y+21,row+'–'+(row+1)+' m',13,'end');
-        addLine(rows,{x1:54,y1:y+27,x2:1106,y2:y+27,stroke:'#fff7d8','stroke-width':1.5,opacity:.8});
-        for(let local=0;local<=100;local++){
-          const x=x0+span*(local/100),global=startCm+local,major=local%10===0,half=local%5===0;
-          const length=local===0||local===100?34:major?27:half?19:11;
-          addLine(ticks,{x1:x,y1:y+55,x2:x,y2:y+55-length,stroke:'#57451e','stroke-width':major?2:half?1.5:1,'stroke-linecap':'round'});
-          if(local%25===0)addText(labels,x,y+76,String(global),14);
-        }
+      const addText=(parent,x,y,value,size)=>{const el=document.createElementNS(NS,'text');el.setAttribute('x',x);el.setAttribute('y',y);el.setAttribute('font-size',size);el.textContent=value;parent.appendChild(el)};
+      for(let cm=0;cm<=maxCm;cm++){
+        const x=position(cm),major=cm%10===0,half=cm%5===0,length=major?38:half?25:13;
+        addLine(ticks,{x1:x,y1:145,x2:x,y2:145-length,'stroke-width':major?2.2:half?1.6:1.1});
+        if(cm%20===0)addText(labels,x,178,String(cm),16);
       }
+      let currentCm=35,zoomIndex=0;
+      const zoomLevels=[1,2,3];
       function setLength(value){
-        const cm=Math.max(0,Math.min(maxCm,Math.round(Number(value)||0)));
-        const row=cm===0?0:Math.min(4,Math.ceil(cm/100)-1);
-        const within=cm-row*100;
-        const x=x0+span*(within/100),y=rowTop+row*rowPitch+82;
+        const cm=Math.max(0,Math.min(maxCm,Math.round(Number(value)||0))),x=position(cm);
         const meters=Math.floor(cm/100),remainingCm=cm%100;
-        handle.setAttribute('transform','translate('+x+' '+y+')');
+        handle.setAttribute('transform','translate('+x+' 266)');
         handle.setAttribute('aria-valuenow',String(cm));
         handle.setAttribute('aria-valuetext',cm+' centimeters; '+meters+' meters '+remainingCm+' centimeters');
-        line.setAttribute('x1',String(x0));line.setAttribute('x2',String(x));
-        line.setAttribute('y1',String(y));line.setAttribute('y2',String(y));
-        startDot.setAttribute('cx',String(x0));startDot.setAttribute('cy',String(y));
-        cmValue.textContent=cm+' cm';
-        meterValue.textContent=meters+' m '+remainingCm+' cm';
-        slider.value=String(cm);
-        slider.style.setProperty('--progress',(cm/maxCm*100)+'%');
+        line.setAttribute('x2',String(x));
+        cmValue.textContent=cm+' cm';meterValue.textContent=meters+' m '+remainingCm+' cm';
+        slider.value=String(cm);slider.style.setProperty('--progress',(cm/maxCm*100)+'%');
         ruler.setAttribute('aria-label','ไม้บรรทัดแสดงความยาว '+cm+' เซนติเมตร หรือ '+meters+' เมตร '+remainingCm+' เซนติเมตร');
+        currentCm=cm;
       }
+      function setZoom(index){
+        zoomIndex=Math.max(0,Math.min(zoomLevels.length-1,index));
+        const zoom=zoomLevels[zoomIndex];
+        ruler.style.width=(zoom*100)+'%';zoomValue.textContent=zoom+'×';
+        zoomOut.disabled=zoomIndex===0;zoomIn.disabled=zoomIndex===zoomLevels.length-1;
+        requestAnimationFrame(()=>{
+          const markerX=(position(currentCm)/1160)*ruler.getBoundingClientRect().width;
+          scroll.scrollLeft=Math.max(0,markerX-scroll.clientWidth/2);
+        });
+      }
+      zoomOut.addEventListener('click',()=>setZoom(zoomIndex-1));
+      zoomIn.addEventListener('click',()=>setZoom(zoomIndex+1));
       slider.addEventListener('input',()=>setLength(slider.value));
       document.querySelectorAll('[data-cm]').forEach(button=>button.addEventListener('click',()=>setLength(button.dataset.cm)));
-      document.querySelector('#randomButton').addEventListener('click',()=>setLength(1+Math.floor(Math.random()*maxCm)));
+      document.querySelector('#randomButton').addEventListener('click',()=>setLength(Math.floor(Math.random()*(maxCm+1))));
       document.querySelector('#resetButton').addEventListener('click',()=>setLength(0));
       handle.addEventListener('keydown',event=>{
         let change=0;
@@ -153,15 +168,11 @@
         if(event.key==='ArrowLeft'||event.key==='ArrowDown')change=-1;
         if(event.key==='Home'){event.preventDefault();setLength(0);return}
         if(event.key==='End'){event.preventDefault();setLength(maxCm);return}
-        if(change){event.preventDefault();setLength(Number(slider.value)+change)}
+        if(change){event.preventDefault();setLength(currentCm+change)}
       });
       function setFromPointer(event){
-        const rect=ruler.getBoundingClientRect();
-        const svgX=(event.clientX-rect.left)/rect.width*1160;
-        const svgY=(event.clientY-rect.top)/rect.height*510;
-        const row=Math.max(0,Math.min(4,Math.floor((svgY-rowTop)/rowPitch)));
-        const within=Math.round((svgX-x0)/span*100);
-        setLength(row*100+within);
+        const rect=ruler.getBoundingClientRect(),svgX=(event.clientX-rect.left)/rect.width*1160;
+        setLength(((svgX-x0)/span)*maxCm);
       }
       let dragging=false;
       handle.addEventListener('pointerdown',event=>{dragging=true;handle.setPointerCapture(event.pointerId);setFromPointer(event);event.preventDefault()});
@@ -169,7 +180,7 @@
       const stop=()=>{dragging=false};
       handle.addEventListener('pointerup',stop);handle.addEventListener('pointercancel',stop);handle.addEventListener('lostpointercapture',stop);
       ruler.addEventListener('click',event=>{if(!dragging)setFromPointer(event)});
-      setLength(35);
+      setLength(currentCm);setZoom(0);
     })();
   </script>
 </body>
