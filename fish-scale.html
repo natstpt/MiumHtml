@@ -63,19 +63,24 @@ body.values-hidden #error{visibility:hidden}
   <main>
     <div class="scale-wrap" aria-label="หน้าปัดตาชั่ง">
       <svg id="scaleArtwork" viewBox="0 0 600 810" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ตาชั่งพร้อมผลไม้บนถาด">
-        <defs><linearGradient id="tray" x2="0" y2="1"><stop stop-color="#e8edf0"/><stop offset="1" stop-color="#7c939e"/></linearGradient></defs>
+        <defs><linearGradient id="tray" x2="0" y2="1"><stop stop-color="#e8edf0"/><stop offset="1" stop-color="#7c939e"/></linearGradient>
+          <symbol id="fruitApple" viewBox="115 10 170 170">
+            <path d="M205 69C154 36 119 75 129 122C140 173 184 176 205 160C235 181 272 160 276 112C280 70 243 47 205 69Z" fill="#e64b3d" stroke="#ad2c27" stroke-width="4"/>
+            <path d="M205 71Q204 45 220 30" fill="none" stroke="#725038" stroke-width="9" stroke-linecap="round"/>
+            <path d="M211 48Q245 15 267 40Q240 66 211 48Z" fill="#378457"/>
+            <path d="M153 86Q142 103 151 122" fill="none" stroke="#ffb0a0" stroke-width="10" stroke-linecap="round"/>
+          </symbol>
+          <symbol id="fruitOrange" viewBox="245 35 155 155">
+            <circle cx="302" cy="124" r="55" fill="#f39b2f" stroke="#cf711c" stroke-width="4"/>
+            <path d="M266 112Q269 93 285 87" fill="none" stroke="#ffd78c" stroke-width="9" stroke-linecap="round"/>
+            <path d="M300 71Q311 43 337 56Q329 81 300 71Z" fill="#378457"/>
+          </symbol>
+          <symbol id="fruitPear" viewBox="320 15 165 170">
+            <path d="M403 47C378 47 381 77 368 95C328 144 355 174 405 176C457 177 478 139 444 99C426 79 431 47 403 47Z" fill="#b3ce49" stroke="#738d2d" stroke-width="4"/>
+            <path d="M405 49L413 25" stroke="#725038" stroke-width="8" stroke-linecap="round"/>
+          </symbol></defs>
         <path d="M220 185H380L390 240H210Z" fill="#d83529" stroke="#9d251e" stroke-width="4"/>
-        <g aria-label="แอปเปิล ส้ม และลูกแพร์">
-          <path d="M205 69C154 36 119 75 129 122C140 173 184 176 205 160C235 181 272 160 276 112C280 70 243 47 205 69Z" fill="#e64b3d" stroke="#ad2c27" stroke-width="4"/>
-          <path d="M205 71Q204 45 220 30" fill="none" stroke="#725038" stroke-width="9" stroke-linecap="round"/>
-          <path d="M211 48Q245 15 267 40Q240 66 211 48Z" fill="#378457"/>
-          <path d="M153 86Q142 103 151 122" fill="none" stroke="#ffb0a0" stroke-width="10" stroke-linecap="round"/>
-          <path d="M403 47C378 47 381 77 368 95C328 144 355 174 405 176C457 177 478 139 444 99C426 79 431 47 403 47Z" fill="#b3ce49" stroke="#738d2d" stroke-width="4"/>
-          <path d="M405 49L413 25" stroke="#725038" stroke-width="8" stroke-linecap="round"/>
-          <circle cx="302" cy="124" r="55" fill="#f39b2f" stroke="#cf711c" stroke-width="4"/>
-          <path d="M266 112Q269 93 285 87" fill="none" stroke="#ffd78c" stroke-width="9" stroke-linecap="round"/>
-          <path d="M300 71Q311 43 337 56Q329 81 300 71Z" fill="#378457"/>
-        </g>
+        <g id="fruitItems" aria-label="ผลไม้ตามน้ำหนัก"></g>
         <path d="M78 168H522L498 202Q300 230 102 202Z" fill="url(#tray)" stroke="#526872" stroke-width="5" stroke-linejoin="round"/>
         <path d="M78 168H522" stroke="#f8fbfc" stroke-width="6"/>
       <svg id="dial" x="0" y="210" width="600" height="600" viewBox="0 0 600 600" role="img" aria-label="หน้าปัดตาชั่งช่วง 0 ถึง 5 กิโลกรัม">
@@ -125,7 +130,7 @@ body.values-hidden #error{visibility:hidden}
       Object.entries({x1,y1,x2,y2,stroke:'#172027','stroke-width':major?14:mid?8:4,'stroke-linecap':'butt'}).forEach(([k,v])=>line.setAttribute(k,v));ticks.append(line);
       if(major&&i>0){const [x,y]=point(176,angle), text=document.createElementNS(NS,'text');text.setAttribute('x',x);text.setAttribute('y',y+17);text.setAttribute('text-anchor','middle');text.setAttribute('font-size','58');text.setAttribute('font-weight','900');text.setAttribute('fill','#1b252a');text.textContent=i/10;labels.append(text)}
     }
-    const input=document.querySelector('#weight'), slider=document.querySelector('#slider'), needle=document.querySelector('#needle'), reading=document.querySelector('#reading'), error=document.querySelector('#error'), exportButton=document.querySelector('#export'), exportStatus=document.querySelector('#exportStatus');
+    const input=document.querySelector('#weight'), slider=document.querySelector('#slider'), needle=document.querySelector('#needle'), reading=document.querySelector('#reading'), error=document.querySelector('#error'), exportButton=document.querySelector('#export'), exportStatus=document.querySelector('#exportStatus'), fruitLayer=document.querySelector('#fruitItems');
     const visibilityButton=document.querySelector('#toggleValue');
     visibilityButton.addEventListener('click',()=>{
       const hidden=document.body.classList.toggle('values-hidden');
@@ -137,11 +142,36 @@ body.values-hidden #error{visibility:hidden}
     });
     let weightUnit='kg';
     const unitButton=document.querySelector('#toggleUnit');
+    function updateFruitIllustration(weightKg){
+      const count=weightKg<=0?0:Math.min(10,Math.max(1,Math.round(weightKg*2)));
+      fruitLayer.replaceChildren();
+      fruitLayer.setAttribute('aria-label',`ผลไม้ประมาณ ${count} ลูก`);
+      if(!count)return;
+      const rows=count<=5?[count]:[Math.ceil(count/2),Math.floor(count/2)];
+      const types=['fruitApple','fruitOrange','fruitPear'];
+      let fruitIndex=0;
+      rows.forEach((rowCount,rowIndex)=>{
+        const iconWidth=rowCount>=5?62:rowCount===4?68:74;
+        const start=300-(rowCount-1)*35;
+        const y=rows.length===1?92:(rowIndex===0?20:92);
+        for(let i=0;i<rowCount;i++){
+          const item=document.createElementNS(NS,'use');
+          item.setAttribute('href',`#${types[fruitIndex%types.length]}`);
+          item.setAttribute('x',String(start+i*70-iconWidth/2));
+          item.setAttribute('y',String(y));
+          item.setAttribute('width',String(iconWidth));
+          item.setAttribute('height','75');
+          fruitLayer.append(item);
+          fruitIndex++;
+        }
+      });
+    }
     function display(value,source){
       let number=Number(value);
       if(!Number.isFinite(number)){error.textContent='กรุณาใส่ตัวเลขตั้งแต่ 0 ถึง 5';return}
       const clamped=Math.max(0,Math.min(5,number));
       error.textContent=number!==clamped?'แสดงค่าสูงสุดภายในช่วง 0–5 กก.':'';
+      updateFruitIllustration(clamped);
       const angle=(clamped/5)*360;
       needle.setAttribute('transform',`rotate(${angle} 300 300)`);
       needle.style.transform=`rotate(${angle}deg)`;
