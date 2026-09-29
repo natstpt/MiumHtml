@@ -52,7 +52,7 @@ body.values-hidden .reading strong{display:none}
 body.values-hidden #error{visibility:hidden}
 </style></head>
 <body>
-<nav class="site-nav" aria-label="เลือกเครื่องมือ"><span class="site-brand">นาฬิกาและตาชั่ง</span><div class="site-links"><a href="index.html">นาฬิกา</a><a href="fish-scale.html" aria-current="page">ตาชั่ง</a></div></nav>
+<nav class="site-nav" aria-label="เลือกเครื่องมือ"><span class="site-brand">ครูเมียม ปูชิตา 👩‍🏫</span><div class="site-links"><a href="index.html">นาฬิกา</a><a href="fish-scale.html" aria-current="page">ตาชั่ง</a></div></nav>
   <main>
     <div class="scale-wrap" aria-label="หน้าปัดตาชั่ง">
       <svg id="scaleArtwork" viewBox="0 0 600 810" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ตาชั่งพร้อมผลไม้บนถาด">
@@ -151,7 +151,7 @@ body.values-hidden #error{visibility:hidden}
       unitButton.setAttribute('aria-label',grams?'เปลี่ยนหน่วยเป็นกิโลกรัม':'เปลี่ยนหน่วยเป็นกรัม');
       input.max=grams?'5000':'5';input.step=grams?'100':'0.1';
       document.querySelector('#capacity').textContent=grams?'5000 g':'5 kg';
-      [...labels.children].forEach((label,i)=>label.textContent=grams?(i+1)*1000:i+1);
+      [...labels.children].forEach((label,i)=>{label.textContent=grams?(i+1)*1000:i+1;label.setAttribute('font-size',grams?'34':'58');});
       const ends=document.querySelectorAll('.range-labels span');
       ends[0].textContent='0 '+weightUnit;ends[1].textContent=(grams?'5000':'5')+' '+weightUnit;
       display(slider.value,'slider');
