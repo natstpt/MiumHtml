@@ -44,6 +44,12 @@
   </style>
   <link rel="stylesheet" href="navigation.css?v=3">
 <style>
+.site-banner{width:min(680px,calc(100% - 32px));margin:10px auto 0;overflow:hidden;border-radius:18px;box-shadow:0 12px 28px #39535b24}
+.site-banner img{display:block;width:100%;height:auto}
+main{min-height:calc(100svh - 320px)}
+@media(max-width:699px){main{min-height:0}}
+</style>
+<style>
 .value-toggle,.unit-toggle{flex-shrink:0;min-height:44px;border:0;border-radius:10px;padding:8px 12px;background:#e8edef;color:#26343a;font:700 14px Tahoma,system-ui,sans-serif;cursor:pointer}
 .input-row{position:relative}.value-toggle{margin-right:6px}.unit-toggle{margin-right:6px}
 body.values-hidden .input-row input,body.values-hidden .reading strong{visibility:hidden}
@@ -54,6 +60,7 @@ body.values-hidden #error{visibility:hidden}
 </style></head>
 <body>
 <nav class="site-nav" aria-label="เลือกเครื่องมือ"><span class="site-brand">ครูเมียม ปูชิตา 👩‍🏫</span><div class="site-links"><a href="index.html" aria-current="page">นาฬิกา</a><a href="fish-scale.html">ตาชั่ง</a></div></nav>
+  <div class="site-banner"><img src="assets/classroom-banner.webp" alt="คุณครูกำลังสอนนักเรียนในห้องเรียน" decoding="async"></div>
   <main>
     <div class="clock-wrap" aria-label="นาฬิกาเข็ม">
       <svg class="clock-face" id="clock" viewBox="0 0 600 600" role="group" aria-label="หน้าปัดนาฬิกาที่เข็มปรับตามเวลาที่กรอก">
