@@ -129,15 +129,16 @@
         cm=Math.round(cm*100)/100;
         const x=position(cm),inch=cm/2.54;
         handle.setAttribute('transform','translate('+x.toFixed(2)+' 294)');
-        handle.setAttribute('aria-valuenow',cm.toFixed(1));
-        handle.setAttribute('aria-valuetext',cm.toFixed(1)+' centimeters, '+inch.toFixed(2)+' inches');
+        handle.setAttribute('aria-valuenow',cm.toFixed(2));
+        handle.setAttribute('aria-valuetext',cm.toFixed(2)+' centimeters, '+inch.toFixed(2)+' inches');
         line.setAttribute('x2',x.toFixed(2));
-        const cmText=Math.abs(cm-Math.round(cm*10)/10)<0.000001?cm.toFixed(1):cm.toFixed(2);\n        cmValue.textContent=cmText+' cm';
+        const cmText=Math.abs(cm-Math.round(cm*10)/10)<0.000001?cm.toFixed(1):cm.toFixed(2);
+        cmValue.textContent=cmText+' cm';
         inchValue.textContent=inch.toFixed(2)+' in';
-        slider.value=cm.toFixed(1);
+        slider.value=cm.toFixed(2);
         const progress=(cm/maxCm)*100;
         slider.style.setProperty('--progress',progress+'%');
-        ruler.setAttribute('aria-label','ไม้บรรทัดแสดงความยาว '+cm.toFixed(1)+' เซนติเมตร หรือ '+inch.toFixed(2)+' นิ้ว');
+        ruler.setAttribute('aria-label','ไม้บรรทัดแสดงความยาว '+cmText+' เซนติเมตร หรือ '+inch.toFixed(2)+' นิ้ว');
       }
       slider.addEventListener('input',()=>setLength(slider.value));
       document.querySelectorAll('[data-cm]').forEach(button=>button.addEventListener('click',()=>setLength(button.dataset.cm)));
