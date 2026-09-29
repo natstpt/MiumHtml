@@ -21,6 +21,8 @@
     .zoom-controls{display:flex;align-items:center;gap:6px;border:1px solid #e0e6e7;border-radius:12px;padding:3px;background:#f7f9f9}
     .zoom-controls button{width:38px;height:36px;border:0;border-radius:9px;background:#e8edef;color:#26343a;font-size:20px;font-weight:800;line-height:1}
     .zoom-controls button:disabled{opacity:.45;cursor:default}
+    .guide-toggle{min-height:44px;border:1px solid #c5dadd;border-radius:12px;padding:10px 14px;background:#edf6f7;color:#176a79;font-weight:800}
+    .guide-toggle[aria-pressed="true"]{background:#176a79;color:#fff}
     .zoom-value{min-width:42px;text-align:center;font-weight:800;color:#26343a}
     .ruler-scroll{width:100%;min-width:0;cursor:grab;touch-action:pan-x pan-y;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-color:#d1ae59 #fff3d1;scrollbar-width:thin}
     #ruler{display:block;width:100%;height:auto;overflow:visible;touch-action:pan-x pan-y;user-select:none;max-width:none}
@@ -75,6 +77,7 @@
           <button id="zoomIn" type="button" aria-label="ขยายสเกล" title="ขยายสเกล">+</button>
         </div>
       </div>
+      <button class="guide-toggle" id="toggleGuide" type="button" aria-pressed="false" aria-controls="measureGuide">แสดงเส้นประ</button>
       <div class="ruler-scroll" id="rulerScroll">
         <svg id="ruler" viewBox="0 0 1160 290" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="rulerTitle rulerDescription">
           <title id="rulerTitle">ไม้บรรทัดสองเมตร แสดงขีดเซนติเมตร</title>
@@ -96,6 +99,7 @@
           <line id="measureLine" x1="115" y1="266" x2="285.625" y2="266" stroke="#e34b3d" stroke-width="5" stroke-linecap="round"/>
           <circle cx="115" cy="266" r="6" fill="#e34b3d"/>
           <g id="measureHandle" transform="translate(285.625 266)" role="slider" tabindex="0" aria-label="จุดวัดความยาว" aria-valuemin="0" aria-valuemax="200" aria-valuenow="35" aria-valuetext="35 เซนติเมตร">
+            <line id="measureGuide" x1="0" y1="-121" x2="0" y2="-14" stroke="#c73126" stroke-width="2" stroke-dasharray="5 4" vector-effect="non-scaling-stroke" pointer-events="none" aria-hidden="true" visibility="hidden"/>
             <path d="M0-14V-5" stroke="#e34b3d" stroke-width="3"/>
             <circle r="30" fill="transparent" stroke="none"/><circle r="12" fill="#fff" stroke="#e34b3d" stroke-width="5"/>
             <circle r="3" fill="#e34b3d"/>
@@ -144,6 +148,13 @@
       const line=document.querySelector('#measureLine'),slider=document.querySelector('#lengthSlider');
       const cmValue=document.querySelector('#cmValue'),meterValue=document.querySelector('#meterValue');
       const zoomOut=document.querySelector('#zoomOut'),zoomIn=document.querySelector('#zoomIn'),zoomValue=document.querySelector('#zoomValue');
+      const guide=document.querySelector('#measureGuide'),guideButton=document.querySelector('#toggleGuide');
+      guideButton.addEventListener('click',()=>{
+        const visible=guideButton.getAttribute('aria-pressed')!=='true';
+        guide.setAttribute('visibility',visible?'visible':'hidden');
+        guideButton.setAttribute('aria-pressed',String(visible));
+        guideButton.textContent=visible?'ซ่อนเส้นประ':'แสดงเส้นประ';
+      });
       const position=cm=>x0+span*(cm/maxCm);
       const addLine=(parent,attrs)=>{const el=document.createElementNS(NS,'line');Object.keys(attrs).forEach(k=>el.setAttribute(k,attrs[k]));parent.appendChild(el)};
       const addText=(parent,x,y,value,size)=>{const el=document.createElementNS(NS,'text');el.setAttribute('x',x);el.setAttribute('y',y);el.setAttribute('font-size',size);el.textContent=value;parent.appendChild(el)};
