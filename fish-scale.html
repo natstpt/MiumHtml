@@ -70,7 +70,7 @@ body.values-hidden #error{visibility:hidden}
             <path d="M211 48Q245 15 267 40Q240 66 211 48Z" fill="#378457"/>
             <path d="M153 86Q142 103 151 122" fill="none" stroke="#ffb0a0" stroke-width="10" stroke-linecap="round"/>
           </symbol>
-          <symbol id="fruitOrange" viewBox="245 35 155 155">
+          <symbol id="fruitOrange" viewBox="232 43 140 140">
             <circle cx="302" cy="124" r="55" fill="#f39b2f" stroke="#cf711c" stroke-width="4"/>
             <path d="M266 112Q269 93 285 87" fill="none" stroke="#ffd78c" stroke-width="9" stroke-linecap="round"/>
             <path d="M300 71Q311 43 337 56Q329 81 300 71Z" fill="#378457"/>
@@ -149,18 +149,24 @@ body.values-hidden #error{visibility:hidden}
       if(!count)return;
       const rows=count<=5?[count]:[Math.ceil(count/2),Math.floor(count/2)];
       const types=['fruitApple','fruitOrange','fruitPear'];
+      const singleSizes=[130,118,112,106,100],singleSteps=[0,100,96,90,80];
+      const stackedSizes={3:84,4:78,5:74},stackedSteps={3:78,4:72,5:68};
+      const baseY=[168,96,168];
+      const bottomRatios={fruitApple:166/170,fruitOrange:140/140,fruitPear:161/170};
       let fruitIndex=0;
       rows.forEach((rowCount,rowIndex)=>{
-        const iconWidth=rowCount>=5?62:rowCount===4?68:74;
-        const start=300-(rowCount-1)*35;
-        const y=rows.length===1?92:(rowIndex===0?20:92);
+        const iconSize=rows.length===1?singleSizes[rowCount-1]:stackedSizes[rowCount];
+        const step=rows.length===1?singleSteps[rowCount-1]:stackedSteps[rowCount];
+        const startX=300-(rowCount-1)*step/2;
+        const baseline=rows.length===1?baseY[0]:baseY[rowIndex+1];
         for(let i=0;i<rowCount;i++){
+          const type=types[fruitIndex%types.length];
           const item=document.createElementNS(NS,'use');
-          item.setAttribute('href',`#${types[fruitIndex%types.length]}`);
-          item.setAttribute('x',String(start+i*70-iconWidth/2));
-          item.setAttribute('y',String(y));
-          item.setAttribute('width',String(iconWidth));
-          item.setAttribute('height','75');
+          item.setAttribute('href',`#${type}`);
+          item.setAttribute('x',String(startX+i*step-iconSize/2));
+          item.setAttribute('y',String(baseline-bottomRatios[type]*iconSize));
+          item.setAttribute('width',String(iconSize));
+          item.setAttribute('height',String(iconSize));
           fruitLayer.append(item);
           fruitIndex++;
         }
