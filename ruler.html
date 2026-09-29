@@ -86,7 +86,7 @@
       <h2>ลองวัดความยาว</h2>
       <p class="hint">ลากจุดสีส้มบนไม้บรรทัด หรือเลื่อนแถบเพื่อกำหนดระยะ แล้วดูค่าเซนติเมตรและนิ้ว</p>
       <label for="lengthSlider">ความยาวที่ต้องการวัด</label>
-      <input id="lengthSlider" type="range" min="0" max="30.48" step="0.1" value="10" aria-label="กำหนดความยาวเป็นเซนติเมตร">
+      <input id="lengthSlider" type="range" min="0" max="30.48" step="0.01" value="10" aria-label="กำหนดความยาวเป็นเซนติเมตร">
       <div class="range-labels"><span>0 cm / 0 in</span><span>30 cm / 12 in</span></div>
       <div class="presets" aria-label="ความยาวตัวอย่าง">
         <button type="button" data-cm="5">5 cm</button>
@@ -126,13 +126,13 @@
       }
       function setLength(cm){
         cm=Math.min(maxCm,Math.max(0,Number(cm)||0));
-        cm=Math.round(cm*10)/10;
+        cm=Math.round(cm*100)/100;
         const x=position(cm),inch=cm/2.54;
         handle.setAttribute('transform','translate('+x.toFixed(2)+' 294)');
         handle.setAttribute('aria-valuenow',cm.toFixed(1));
         handle.setAttribute('aria-valuetext',cm.toFixed(1)+' centimeters, '+inch.toFixed(2)+' inches');
         line.setAttribute('x2',x.toFixed(2));
-        cmValue.textContent=cm.toFixed(1)+' cm';
+        const cmText=Math.abs(cm-Math.round(cm*10)/10)<0.000001?cm.toFixed(1):cm.toFixed(2);\n        cmValue.textContent=cmText+' cm';
         inchValue.textContent=inch.toFixed(2)+' in';
         slider.value=cm.toFixed(1);
         const progress=(cm/maxCm)*100;
