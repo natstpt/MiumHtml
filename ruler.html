@@ -20,6 +20,10 @@
     .range-badge{flex:none;border-radius:999px;padding:7px 12px;background:#fff3d1;color:#725314;font-size:.88rem;font-weight:800}
     .zoom-controls{display:flex;align-items:center;gap:6px;border:1px solid #e0e6e7;border-radius:12px;padding:3px;background:#f7f9f9}
     .zoom-controls button{width:38px;height:36px;border:0;border-radius:9px;background:#e8edef;color:#26343a;font-size:20px;font-weight:800;line-height:1}
+    .zoom-controls{flex-wrap:wrap}
+    .zoom-controls #resetZoom{width:auto;min-height:44px;padding:8px 10px;font-size:13px}
+    .capacity-control{margin-bottom:18px}
+    .capacity-control select{width:100%;min-height:48px;padding:10px 12px;border:2px solid #bac8cc;border-radius:12px;background:white;font:700 1rem Tahoma,system-ui}
     .zoom-controls button:disabled{opacity:.45;cursor:default}
     .guide-toggle{min-height:44px;border:1px solid #c5dadd;border-radius:12px;padding:10px 14px;background:#edf6f7;color:#176a79;font-weight:800}
     .guide-toggle[aria-pressed="true"]{background:#176a79;color:#fff}
@@ -80,6 +84,7 @@
           <button id="zoomOut" type="button" aria-label="ย่อสเกล" title="ย่อสเกล">−</button>
           <span id="zoomValue" class="zoom-value" aria-live="polite">1×</span>
           <button id="zoomIn" type="button" aria-label="ขยายสเกล" title="ขยายสเกล">+</button>
+          <button id="resetZoom" type="button">รีเซ็ตซูม 1×</button>
         </div>
       </div>
       <div class="ruler-scroll" id="rulerScroll">
@@ -97,7 +102,7 @@
           <g id="cmLabels" fill="#433719" font-family="system-ui,Tahoma,sans-serif" font-weight="800" text-anchor="middle"></g>
           <line x1="115" y1="208" x2="1090" y2="208" stroke="#9c7a34" stroke-width="3" stroke-linecap="round"/>
           <path d="M115 202L105 208L115 214M1090 202L1100 208L1090 214" fill="none" stroke="#9c7a34" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-          <g fill="#705524" font-size="18" font-weight="800" text-anchor="middle">
+          <g id="meterLabels" fill="#705524" font-size="18" font-weight="800" text-anchor="middle">
             <text x="115" y="241">0 m</text><text x="602.5" y="241">1 m</text><text x="1090" y="241">2 m</text>
           </g>
           <line id="measureLine" x1="115" y1="266" x2="285.625" y2="266" stroke="#e34b3d" stroke-width="5" stroke-linecap="round"/>
@@ -119,6 +124,14 @@
     <section class="panel" aria-label="กำหนดความยาว">
       <h2>ลองวัดความยาว</h2>
       <p class="hint">ลากจุดสีแดง กรอกความยาว หรือเลื่อนแถบทีละ 1 เซนติเมตร แล้วอ่านค่าเป็นเซนติเมตรและเมตร</p>
+      <div class="capacity-control">
+        <label for="rulerCapacity">ความยาวไม้บรรทัดสูงสุด</label>
+        <select id="rulerCapacity">
+          <option value="200">2 m (200 cm)</option>
+          <option value="500">5 m (500 cm)</option>
+          <option value="1000">10 m (1,000 cm)</option>
+        </select>
+      </div>
       <div class="display-controls" role="group" aria-label="ตัวช่วยการสอน">
         <span class="display-controls-title">ตัวช่วยการสอน</span>
         <div class="display-controls-buttons">
@@ -152,7 +165,8 @@
   </main>
   <script>
     (function(){
-      const NS='http://www.w3.org/2000/svg',x0=115,xEnd=1090,span=xEnd-x0,maxCm=200;
+      const NS='http://www.w3.org/2000/svg',x0=115,xEnd=1090,span=xEnd-x0;
+      let maxCm=200;
       const ticks=document.querySelector('#cmTicks'),labels=document.querySelector('#cmLabels');
       const ruler=document.querySelector('#ruler'),scroll=document.querySelector('#rulerScroll'),handle=document.querySelector('#measureHandle');
       const line=document.querySelector('#measureLine'),slider=document.querySelector('#lengthSlider');
@@ -168,10 +182,26 @@
       const position=cm=>x0+span*(cm/maxCm);
       const addLine=(parent,attrs)=>{const el=document.createElementNS(NS,'line');Object.keys(attrs).forEach(k=>el.setAttribute(k,attrs[k]));parent.appendChild(el)};
       const addText=(parent,x,y,value,size)=>{const el=document.createElementNS(NS,'text');el.setAttribute('x',x);el.setAttribute('y',y);el.setAttribute('font-size',size);el.textContent=value;parent.appendChild(el)};
-      for(let cm=0;cm<=maxCm;cm++){
-        const x=position(cm),major=cm%10===0,half=cm%5===0,length=major?38:half?25:13;
-        addLine(ticks,{x1:x,y1:145,x2:x,y2:145-length,'stroke-width':major?2.2:half?1.6:1.1});
-        if(cm%20===0)addText(labels,x,178,String(cm),16);
+      function drawScale(){
+        ticks.replaceChildren();labels.replaceChildren();
+        const meterLabels=document.querySelector('#meterLabels');
+        meterLabels.replaceChildren();
+        const pixelsPerCm=span/1160*ruler.getBoundingClientRect().width/maxCm;
+        const tickStep=[1,5,10,20,50,100].find(step=>step*pixelsPerCm>=3)||100;
+        const labelStep=[10,20,50,100,200,500,1000].find(step=>step*pixelsPerCm>=55)||1000;
+        const majorStep=tickStep===1?10:tickStep*5;
+        for(let cm=0;cm<=maxCm;cm+=tickStep){
+          const x=position(cm),major=cm%majorStep===0,half=cm%(tickStep*5)===0;
+          addLine(ticks,{x1:x,y1:145,x2:x,y2:145-(major?38:half?25:13),'stroke-width':major?2.2:1.1});
+        }
+        for(let cm=0;cm<=maxCm;cm+=labelStep)addText(labels,position(cm),178,String(cm),16);
+        if(maxCm%labelStep)addText(labels,position(maxCm),178,String(maxCm),16);
+        const meterStep=[1,2,5,10].find(step=>step*100*pixelsPerCm>=55)||10;
+        for(let m=0;m<=maxCm/100;m+=meterStep)addText(meterLabels,position(m*100),241,m+' m',18);
+        if((maxCm/100)%meterStep)addText(meterLabels,position(maxCm),241,maxCm/100+' m',18);
+        const description='ขีดเล็กแต่ละขีดแทน '+tickStep+' cm ตัวเลขบอกระยะทุก '+labelStep+' cm · 100 cm เท่ากับ 1 m';
+        document.querySelector('.note').textContent=description;
+        document.querySelector('#rulerDescription').textContent=description;
       }
       let currentCm=35,zoomIndex=0,valuesHidden=false;
       const input=document.querySelector('#lengthInput'),form=document.querySelector('#lengthForm'),toggle=document.querySelector('#toggleValue');
@@ -202,8 +232,8 @@
       form.addEventListener('submit',event=>{
         event.preventDefault();
         const value=Number(input.value);
-        if(input.value.trim()===''||!Number.isInteger(value)||value<0||value>200){
-          document.querySelector('#inputError').textContent='กรุณาใส่จำนวนเต็มตั้งแต่ 0 ถึง 200 cm';return;
+        if(input.value.trim()===''||!Number.isInteger(value)||value<0||value>maxCm){
+          document.querySelector('#inputError').textContent='กรุณาใส่จำนวนเต็มตั้งแต่ 0 ถึง '+maxCm+' cm';return;
         }
         document.querySelector('#inputError').textContent='';
         setLength(value);
@@ -228,10 +258,27 @@
         const zoom=zoomLevels[zoomIndex];
         ruler.style.width=(zoom*100)+'%';zoomValue.textContent=zoom+'×';
         zoomOut.disabled=zoomIndex===0;zoomIn.disabled=zoomIndex===zoomLevels.length-1;
+        drawScale();
         revealMarker(true);
       }
       zoomOut.addEventListener('click',()=>setZoom(zoomIndex-1));
       zoomIn.addEventListener('click',()=>setZoom(zoomIndex+1));
+      document.querySelector('#resetZoom').addEventListener('click',()=>setZoom(0));
+      document.querySelector('#rulerCapacity').addEventListener('change',event=>{
+        maxCm=Number(event.target.value);
+        const rangeText=maxCm+' cm = '+maxCm/100+' m';
+        document.querySelector('.range-badge').textContent=rangeText;
+        document.querySelector('.range-labels span:last-child').textContent=rangeText;
+        document.querySelector('label[for="lengthInput"]').textContent='กรอกความยาว (0–'+maxCm+' cm)';
+        document.querySelector('#rulerTitle').textContent='ไม้บรรทัด '+maxCm/100+' เมตร แสดงสเกลเซนติเมตร';
+        slider.max=String(maxCm);input.max=String(maxCm);handle.setAttribute('aria-valuemax',String(maxCm));
+        document.querySelector('#inputError').textContent='';
+        const values=maxCm===200?[25,50,100,150,200]:maxCm===500?[50,100,200,300,500]:[100,200,500,750,1000];
+        document.querySelectorAll('[data-cm]').forEach((button,i)=>{
+          button.dataset.cm=String(values[i]);button.textContent=values[i]%100===0?values[i]/100+' m':values[i]+' cm';
+        });
+        setLength(Math.min(currentCm,maxCm),false);setZoom(0);
+      });
       slider.addEventListener('input',()=>setLength(slider.value));
       document.querySelectorAll('[data-cm]').forEach(button=>button.addEventListener('click',()=>setLength(button.dataset.cm)));
       document.querySelector('#randomButton').addEventListener('click',()=>setLength(Math.floor(Math.random()*(maxCm+1))));
@@ -276,7 +323,7 @@
       ['pointerup','pointercancel','lostpointercapture'].forEach(name=>scroll.addEventListener(name,event=>{
         if(mousePan&&event.pointerId===mousePan.id)mousePan=null;
       }));
-      window.addEventListener('resize',()=>revealMarker(true));
+      window.addEventListener('resize',()=>{drawScale();revealMarker(true)});
       setLength(currentCm);setZoom(0);
     })();
   </script>
